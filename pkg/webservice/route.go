@@ -1,7 +1,8 @@
-package nodemonitor
+package webservice
 
 import (
 	"net/http"
+	"nodeMonitor/pkg/metrics"
 )
 
 type APIMethod int
@@ -35,12 +36,18 @@ type route struct {
 
 type routes []route
 
-var monitorRoutes = routes{
+var MonitorRoutes = routes{
+	route{
+		Name:        "Prometheus metrics",
+		Method:      GET.String(),
+		API:         "/metrics",
+		HandlerFunc: metrics.MetricHandler,
+	},
 	route{
 		Name:        "CPUs_information",
 		Method:      GET.String(),
 		API:         "/v1/CPUs",
-		HandlerFunc: nil,
+		HandlerFunc: ListCPUs,
 	},
 	route{
 		Name:        "CPUs_average_usage",
