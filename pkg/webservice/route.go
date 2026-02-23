@@ -3,6 +3,7 @@ package webservice
 import (
 	"net/http"
 	"nodeMonitor/pkg/metrics"
+	"os"
 )
 
 type APIMethod int
@@ -37,6 +38,18 @@ type route struct {
 type routes []route
 
 var MonitorRoutes = routes{
+	route{
+		Name:   "Console",
+		Method: GET.String(),
+		API:    "/console",
+		HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
+			distPath := os.Getenv("WEB_DIST")
+			if distPath == "" {
+				distPath = "./console/nodemonitor/out"
+			}
+			http.ServeFile(w, r, distPath+"/index.html")
+		},
+	},
 	route{
 		Name:        "Prometheus metrics",
 		Method:      GET.String(),
