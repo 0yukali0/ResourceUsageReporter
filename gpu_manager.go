@@ -4,21 +4,10 @@ import (
 	"log"
 	"sync"
 
+	"nodeMonitor/model"
+
 	"github.com/NVIDIA/go-nvml/pkg/nvml"
 )
-
-type vramInfo struct {
-	Usage     float64 `json:"usage"`
-	Allocated float64 `json:"allocated"`
-	Total     float64 `json:"total"`
-}
-
-type GPUInfo struct {
-	Idx      int      `json:"idx"`
-	GPUName  string   `json:"gpu_name"`
-	GPUUsage float64  `json:"gpu_usage"`
-	VRAM     vramInfo `json:"vram"`
-}
 
 type GPUManager struct {
 	mu          sync.Mutex
@@ -73,7 +62,7 @@ func (gm *GPUManager) Close() {
 
 // Allocate 列出目前所有 GPU 資訊。
 // 若非 GPU node 或 NVML 初始化失敗，回傳空 slice。
-func (gm *GPUManager) Allocate() []GPUInfo {
+func (gm *GPUManager) Allocate() []model.GPUInfo {
 	gm.mu.Lock()
 	defer gm.mu.Unlock()
 
@@ -81,7 +70,7 @@ func (gm *GPUManager) Allocate() []GPUInfo {
 		ret := nvml.Init()
 		if ret != nvml.SUCCESS {
 			log.Printf("nvml init failed: %s", nvml.ErrorString(ret))
-			return []GPUInfo{}
+			return []model.GPUInfo{}
 		}
 		gm.initialized = true
 	}
@@ -89,10 +78,10 @@ func (gm *GPUManager) Allocate() []GPUInfo {
 	count, ret := nvml.DeviceGetCount()
 	if ret != nvml.SUCCESS {
 		log.Printf("get device count failed: %s", nvml.ErrorString(ret))
-		return []GPUInfo{}
+		return []model.GPUInfo{}
 	}
 
-	gpus := make([]GPUInfo, 0, count)
+	gpus := make([]model.GPUInfo, 0, count)
 
 	for i := 0; i < count; i++ {
 		device, ret := nvml.DeviceGetHandleByIndex(i)
@@ -121,11 +110,11 @@ func (gm *GPUManager) Allocate() []GPUInfo {
 			continue
 		}
 
-		gpus = append(gpus, GPUInfo{
+		gpus = append(gpus, model.GPUInfo{
 			Idx:      i,
 			GPUName:  name,
 			GPUUsage: gpuUsage,
-			VRAM: vramInfo{
+			VRAM: model.VramInfo{
 				Usage:     float64(mem.Used) / GB,
 				Allocated: float64(mem.Used) / GB,
 				Total:     float64(mem.Total) / GB,
