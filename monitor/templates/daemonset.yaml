@@ -1,0 +1,105 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ include "monitor.fullname" . }}
+  labels:
+    {{- include "monitor.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "monitor.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "monitor.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "monitor.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      
+      hostNetwork: true
+      hostPID: true
+      hostIPC: true
+      dnsPolicy: ClusterFirstWithHostNet
+
+      containers:
+      - name: {{ .Chart.Name }}
+        securityContext:
+          {{- toYaml .Values.securityContext | nindent 12 }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - name: http
+          containerPort: {{ .Values.app.port }}
+          protocol: TCP
+        
+        env:
+        - name: PORT
+          value: "{{ .Values.app.port }}"
+        - name: LOG_LEVEL
+          value: "{{ .Values.app.logLevel }}"
+        - name: METRICS_INTERVAL
+          value: "{{ .Values.metricsInterval }}"
+        
+        livenessProbe:
+          httpGet:
+            path: /console
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        
+        readinessProbe:
+          httpGet:
+            path: /console
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 2
+
+        resources:
+          {{- toYaml .Values.resources | nindent 12 }}
+
+        volumeMounts:
+        - name: sys
+          mountPath: /sys
+          readOnly: true
+        - name: proc
+          mountPath: /proc
+          readOnly: true
+        - name: dev
+          mountPath: /dev
+
+      volumes:
+      - name: sys
+        hostPath:
+          path: /sys
+      - name: proc
+        hostPath:
+          path: /proc
+      - name: dev
+        hostPath:
+          path: /dev
+
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

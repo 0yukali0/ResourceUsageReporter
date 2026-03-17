@@ -30,6 +30,7 @@ FROM ubuntu:26.04
 WORKDIR /root/
 
 # Copy the binary from builder
+COPY console.html .
 COPY --from=builder /app/resource-reporter .
 
 # Expose port
