@@ -82,7 +82,7 @@ func getTotalNetworkBytes() (uint64, error) {
 	return total, nil
 }
 
-func collectResource(prevBytes uint64, intervalSec float64) (model.Resource, uint64, error) {
+func collectResource(gpu_manager *GPUManager, prevBytes uint64, intervalSec float64) (model.Resource, uint64, error) {
 	now := time.Now()
 
 	host := getHostname()
@@ -117,8 +117,6 @@ func collectResource(prevBytes uint64, intervalSec float64) (model.Resource, uin
 		// bytes/s -> bit/s
 		bandwidth = float64(currentBytes-prevBytes) * 8 / intervalSec
 	}
-
-	gpu_manager := NewGPUManager()
 
 	res := model.Resource{
 		Timestamp: now,

@@ -27,6 +27,7 @@ func handleConsole(w http.ResponseWriter, r *http.Request, _ httprouter.Params) 
 
 func main() {
 	server := NewServer()
+	gpu_manager := NewGPUManager()
 
 	router := httprouter.New()
 	router.GET("/console", handleConsole)
@@ -54,7 +55,7 @@ func main() {
 		}
 
 		for range ticker.C {
-			res, currentBytes, err := collectResource(prevBytes, 1.0)
+			res, currentBytes, err := collectResource(gpu_manager, prevBytes, 1.0)
 			if err != nil {
 				log.Printf("collect resource error: %v", err)
 				continue
