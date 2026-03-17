@@ -12,10 +12,24 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
+func handleConsole(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	data, err := os.ReadFile("console.html")
+	if err != nil {
+		log.Printf("failed to read console.html: %v", err)
+		http.Error(w, "Console not found", http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+	w.Write(data)
+}
+
 func main() {
 	server := NewServer()
 
 	router := httprouter.New()
+	router.GET("/console", handleConsole)
 	router.GET("/resources", server.handleResourcesWS)
 
 	httpServer := &http.Server{
